@@ -3,17 +3,19 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import game.*;
+import java.util.List;
 
   
 // Server class
 class Server {
-    
+    static boolean gameSit =false;
+    static int turn = 0;
+    static int player = 0;
     static Map<Socket, Character> charMap = new HashMap<Socket, Character>();
+    static List<Socket> socketList = new ArrayList<>();
     public static void main(String[] args)
     {
         ServerSocket server = null;
-  
         try {
   
             // server is listening on port 1234
@@ -23,26 +25,32 @@ class Server {
             // running infinite loop for getting
             // client request
             while (true) {
-  
-                // socket object to receive incoming client
-                // requests
-                Socket client = server.accept();
-  
-                // Displaying that new client is connected
-                // to server
-                System.out.println("New client connected"
-                                   + client.getInetAddress()
-                                         .getHostAddress());
-  
-                
-                // create a new thread object
-                ClientHandler clientSock
-                    = new ClientHandler(client);
-                
-                // This thread will handle the client
-                // separately
-                new Thread(clientSock).start();
+                if (player < 3) {
+                    // socket object to receive incoming client
+                    // requests
+                    Socket client = server.accept();
+    
+                    // Displaying that new client is connected
+                    // to server
+                    System.out.println("New client connected"
+                                    + client.getInetAddress()
+                                            .getHostAddress());
+                    
+                    // create a new thread object
+                    ClientHandler clientSock
+                        = new ClientHandler(client);
+                    
+                    // This thread will handle the client
+                    // separately
+                    new Thread(clientSock).start();
+                    player++;
+                }
+                if (player == 3) {
+                    System.out.println("3 Players has arrived, lets begin!");
+                    player++;
+                }
             }
+            
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -74,6 +82,7 @@ class Server {
         {
             PrintWriter out = null;
             BufferedReader in = null;
+            String skill = null;
             
             try {
                 // get the outputstream of client
@@ -84,14 +93,8 @@ class Server {
                 in = new BufferedReader(
                     new InputStreamReader(
                         clientSocket.getInputStream()));
-
+                System.out.println(clientSocket);
                 if(!charMap.containsKey(clientSocket)){
-                    // get the outputstream of client
-                    out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    // get the inputstream of client
-                    in = new BufferedReader( new InputStreamReader( clientSocket.getInputStream()));
-                    //charMap.put("a", new Integer(100));
-                    //out.println("Enter nickname:");
                     String nick = in.readLine();
                     boolean class_check = false;
                     while (!class_check) {
@@ -111,17 +114,53 @@ class Server {
                             class_check = true;
                         }
                     }
-                    out.println("Let the game begin!!");
+                    
+                    out.println("Let the game begin!! Please Press Enter!!");
                 }
                 else{
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        // line = message from client 
-                        out.println(line); //Clients read from here
+                    if (charMap.size() < 3){
+                        out.println("We wait for 3 player.");
+                    }
+                    else if(charMap.size() == 3 && !gameSit){
+                        for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
+                            socketList.add(entry.getKey());
+                            out = new PrintWriter(entry.getKey().getOutputStream(), true);
+                            out.println("3 Players has arrived, lets begin!");
+                        }
+                        gameSit = true;
+                    }
+                    else{
+                        if(turn == 0 && clientSocket == socketList.get(0)){
+                            out.printf("Turn: %d - Player: %s",turn, charMap.get(clientSocket).getName());
+                            turn++;
+                        }
+                        else if(turn == 1 && clientSocket == socketList.get(1)){
+                            out.printf("Turn: %d - Player: %s",turn, charMap.get(clientSocket).getName());
+                            turn++;
+                        }
+                        else if(turn == 2 && clientSocket == socketList.get(2)){
+                            out.printf("Turn: %d - Player: %s",turn, charMap.get(clientSocket).getName());
+                            turn++;
+                        }
+                        else if(turn == 3 && clientSocket == socketList.get(3)){
+                            out.printf("Turn: %d - Player: Boss",turn);
+                            turn++;
+                        }
+                        else{
+                            if(turn == 3){
+
+                            }
+                            else{
+                                out.printf("it's %s turn to move",charMap.get(socketList.get(turn)).getName());
+                            }
+                        }
                     }
                 }
             }
             catch (IOException e) {
+                if (charMap.containsKey(clientSocket)) {
+                    charMap.remove(clientSocket);
+                }
                 e.printStackTrace();
             }
             finally {
@@ -135,6 +174,9 @@ class Server {
                     }
                 }
                 catch (IOException e) {
+                    if (charMap.containsKey(clientSocket)) {
+                        charMap.remove(clientSocket);
+                    }
                     e.printStackTrace();
                 }
             }
