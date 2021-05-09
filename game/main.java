@@ -59,6 +59,7 @@ public class main {
                     character_list.get(character_list.size()-1).sethp(hp);
                     System.out.println(character_list.get(character_list.size()-1).getName() + "hp is : "+ character_list.get(character_list.size()-1).gethp());
                 }
+                //Boss ölümü için 'if' yazılcak 'break;'
             }
             turn=turn+1;
         }

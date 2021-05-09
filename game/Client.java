@@ -4,7 +4,7 @@ import java.util.*;
   
 // Client class
 class Client {
-    static Boolean sit = false;
+    
     // driver code
     public static void main(String[] args)
     {
@@ -24,11 +24,9 @@ class Client {
             // object of scanner class
             Scanner sc = new Scanner(System.in);
             String line = null;
+  
             while (!"exit".equalsIgnoreCase(line)) {
-                if(!sit){
-                    System.out.println("Enter nickname:");
-                    sit = true;
-                }
+                
                 // reading from user
                 line = sc.nextLine();
   
@@ -37,7 +35,8 @@ class Client {
                 out.flush();
   
                 // displaying server reply
-                System.out.println(in.readLine());
+                System.out.println("Server replied "
+                                   + in.readLine());
             }
             
             // closing the scanner object
