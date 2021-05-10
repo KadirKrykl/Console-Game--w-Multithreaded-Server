@@ -142,8 +142,11 @@ class Server {
                                 out.printf("Turn: %d - Player: %s \n",turn, charMap.get(clientSocket).getName());
                                 turn++;
                             }
-                            else if(turn == 3 && clientSocket.equals(socketList.get(3))){
-                                out.printf("Turn: %d - Player: Boss \n",turn);
+                            else if(turn == 3){
+                                for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
+                                    out = new PrintWriter(entry.getKey().getOutputStream(), true);
+                                    out.printf("Turn: %d - Player: Boss \n",turn);
+                                }
                                 turn = 0;
                             }
                             else{
