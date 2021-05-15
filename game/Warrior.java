@@ -32,10 +32,11 @@ public class Warrior extends Character{
                 int dice = rand.nextInt(24);
                 dice=dice+1;
                 System.out.println("your dice : " + dice); 
-                int taunt = 1;
+                int hit = 10;
                 if(dice>= 12){
-                    System.out.println( name + " taunt to enemy." ); 
-                    return taunt;
+                    System.out.println( name + "double strike  attacked." ); 
+                    System.out.println(name + " hit : " + hit + " HP"); 
+                    return hit;
                 }else{
                     System.out.println("your attack missed"); 
                     return 0;
