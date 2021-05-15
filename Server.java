@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
   
 // Server class
@@ -13,6 +14,8 @@ class Server {
     static int player = 0;
     static Map<Socket, Character> charMap = new HashMap<Socket, Character>();
     static List<Socket> socketList = new ArrayList<>();
+    static List<Boss> bosses = new ArrayList<>();
+    static String[] skills = {"1", "2"};
     public static void main(String[] args)
     {
         ServerSocket server = null;
@@ -93,30 +96,28 @@ class Server {
                     new InputStreamReader(
                         clientSocket.getInputStream()));
                 String line = null;
-                while ((line = in.readLine()) != null) {
+                while ((line = in.readLine()) != null){
                     if(!charMap.containsKey(clientSocket)){
                         String nick = line;
                         boolean class_check = false;
-                        while (!class_check) {
-                            out.println("Choose a class : 1:Warrior  2:Mage  3:Archer");
-                            String hero_class = in.readLine();
-                            if(hero_class.equals("1")){
-                                Character warrior = new Warrior(nick);
-                                charMap.put(clientSocket, warrior);
-                                class_check = true;
-                            }else if(hero_class.equals("2")) {
-                                Character mage = new Mage(nick);
-                                charMap.put(clientSocket, mage);
-                                class_check = true;
-                            }else if(hero_class.equals("3")){
-                                Character archer = new Archer(nick);
-                                charMap.put(clientSocket, archer);
-                                class_check = true;
-                            }
+                        out.println("Choose a class : 1:Warrior  2:Mage  3:Archer");
+                        String hero_class = in.readLine();
+                        if(hero_class.equals("1")){
+                            Character warrior = new Warrior(nick);
+                            charMap.put(clientSocket, warrior);
+                            socketList.add(clientSocket);
+                            out.println("Press Enter");
+                        }else if(hero_class.equals("2")) {
+                            Character mage = new Mage(nick);
+                            charMap.put(clientSocket, mage);
+                            socketList.add(clientSocket);
+                            out.println("Press Enter");
+                        }else if(hero_class.equals("3")){
+                            Character archer = new Archer(nick);
+                            charMap.put(clientSocket, archer);
+                            socketList.add(clientSocket);
+                            out.println("Press Enter");
                         }
-                        socketList.add(clientSocket);
-                        
-                        out.println("Let the game begin!! Please Press Enter!!");
                     }
                     else{
                         if (charMap.size() < 3){
@@ -127,30 +128,62 @@ class Server {
                                 out = new PrintWriter(entry.getKey().getOutputStream(), true);
                                 out.println("3 Players has arrived, lets begin!");
                             }
+                            bosses.add(new Boss("Queen of Pain"));
+                            bosses.add(new Boss("Rosh"));
                             gameSit = true;
                         }
                         else{
-                            if(turn == 0 && clientSocket.equals(socketList.get(0))){
-                                out.printf("Turn: %d - Player: %s \n",turn, charMap.get(clientSocket).getName());
-                                turn++;
-                            }
-                            else if(turn == 1 && clientSocket.equals(socketList.get(1))){
-                                out.printf("Turn: %d - Player: %s \n",turn, charMap.get(clientSocket).getName());
-                                turn++;
-                            }
-                            else if(turn == 2 && clientSocket.equals(socketList.get(2))){
-                                out.printf("Turn: %d - Player: %s \n",turn, charMap.get(clientSocket).getName());
-                                turn++;
-                            }
-                            else if(turn == 3){
-                                for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
-                                    out = new PrintWriter(entry.getKey().getOutputStream(), true);
-                                    out.printf("Turn: %d - Player: Boss \n",turn);
+                            String playerName = charMap.get(socketList.get(turn)).getPName();
+                            if(clientSocket.equals(socketList.get(turn))){
+                                String[] acts = charMap.get(clientSocket).act_list();
+                                if (line == "1" || line == "2") {
+                                    int[] response = charMap.get(clientSocket).attack(Integer.parseInt(line));
+                                    bosses.get(0).sethp(bosses.get(0).gethp() - response[1]);
+                                    for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
+                                        out = new PrintWriter(entry.getKey().getOutputStream(), true);
+                                        out.printf("Player %s attacted to boss with %s and rolled %d. So hit %d. Boss has %d hp",playerName,acts[response[2]],response[0],response[1],bosses.get(0).gethp());
+                                    }
+                                    if(bosses.get(0).gethp() <= 0){
+                                        for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
+                                            out = new PrintWriter(entry.getKey().getOutputStream(), true);
+                                            if(bosses.size() == 2){
+                                                out.printf("Boss %s died. New Boss is %s", bosses.get(0).getName(), bosses.get(1).getName());
+                                            }
+                                            else{
+                                                out.printf("Boss %s died. Congratulations Champions You Win", bosses.get(0).getName(), bosses.get(1).getName());
+                                            }
+                                        }
+                                        bosses.remove(0);
+                                    }
+                                    turn++;
                                 }
-                                turn = 0;
+                                else{
+                                    out.printf("Now Your Turn. Choose a skill; 1:%s  2:%s", acts[0],acts[1]);
+                                }
+                                if (turn >= socketList.size() && bosses.size() > 0) {
+                                    Random rand = new Random();
+                                    int idx = rand.nextInt(socketList.size());
+                                    int[] response = bosses.get(0).attack();
+                                    String target = charMap.get(socketList.get(idx)).getPName();
+                                    int tempHp = charMap.get(socketList.get(idx)).gethp();
+                                    charMap.get( socketList.get(idx) ).sethp( tempHp - response[1] );
+                                    if (tempHp - response[1] <= 0) {
+                                        socketList.remove(idx);
+                                    }
+                                    for (Map.Entry<Socket, Character> entry : charMap.entrySet()) {
+                                        out = new PrintWriter(entry.getKey().getOutputStream(), true);
+                                        if (tempHp - response[1] <= 0) {
+                                            out.printf("Boss attacted to %s with rolled %d. So hit %d. Unfourtunetly %s died.",target, response[0], response[1], target);
+                                        }
+                                        else{
+                                            out.printf("Boss attacted to %s with rolled %d. So hit %d. Player %s has %d hp.",target, response[0], response[1], target, (tempHp-response[1]));
+                                        }
+                                    }
+                                    turn = 0;
+                                }
                             }
                             else{
-                                out.printf("it's %s turn to move \n",charMap.get(socketList.get(turn)).getName());
+                                out.printf("it's %s turn to move \n",playerName);
                             }
                         }
                     }

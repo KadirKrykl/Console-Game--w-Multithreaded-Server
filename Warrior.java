@@ -5,6 +5,7 @@ public class Warrior extends Character{
 
     protected String name;
     protected int hp=100;
+    protected String[] attacks = {"Normal","Taunt"};
 
 
     public Warrior(String name) {
@@ -12,42 +13,25 @@ public class Warrior extends Character{
     }
 
     @Override
-    int attack(String act) {
-        if (act.equals("1")){
-            Random rand = new Random();
-            int dice = rand.nextInt(24);
-            dice=dice+1;
-            System.out.println("your dice : " + dice); 
-            int hit = 5;
-            if(dice>= 12){
-                System.out.println( name + " attacked." ); 
-                System.out.println(name + " hit : " + hit + " HP"); 
-                return hit;
-            }else{
-                System.out.println("your attack missed"); 
-                return 0;
-            }
-        }else if(act.equals("2")){
-                Random rand = new Random();
-                int dice = rand.nextInt(24);
-                dice=dice+1;
-                System.out.println("your dice : " + dice); 
-                int taunt = 1;
-                if(dice>= 12){
-                    System.out.println( name + " taunt to enemy." ); 
-                    return taunt;
-                }else{
-                    System.out.println("your attack missed"); 
-                    return 0;
-                } 
+    int[] attack(int act) {
+        int[] result = new int[3];
+        Random rand = new Random();
+        int dice = rand.nextInt(24);
+        dice=dice+1;
+        result[0] = dice;
+        result[2] = act;
+        int hit = 5;
+        if(dice>= 12){
+            result[1] = hit;
+            return result;
         }else{
-            System.out.println("skill yanlış girildi");
-            return 0;
+            result[1] = 0;
+            return result;
         }
     }
      
-    public void act_list(){
-        System.out.println("1 : Normal Attack , 2: taunt");
+    public String[] act_list(){
+        return attacks;
     }
 
     public void sethp(int hp){
@@ -57,7 +41,7 @@ public class Warrior extends Character{
         return hp;
     }
 
-    public String getName(){
+    public String getPName(){
         return name;
     }
         
