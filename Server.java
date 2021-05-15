@@ -99,7 +99,6 @@ class Server {
                 while ((line = in.readLine()) != null){
                     if(!charMap.containsKey(clientSocket)){
                         String nick = line;
-                        boolean class_check = false;
                         out.println("Choose a class : 1:Warrior  2:Mage  3:Archer");
                         String hero_class = in.readLine();
                         if(hero_class.equals("1")){
