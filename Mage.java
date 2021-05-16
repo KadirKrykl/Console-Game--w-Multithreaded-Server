@@ -20,6 +20,12 @@ public class Mage extends Character{
         result[0] = dice;
         result[2] = act;
         int hit = 5;
+        if(act == 0){
+            hit = 5;
+        }
+        else{
+            hit = 10;
+        }
         if(dice >= 12){
             result[1] = hit;
             return result;

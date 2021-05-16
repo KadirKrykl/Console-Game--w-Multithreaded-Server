@@ -13,7 +13,7 @@ class Server {
     static int turn = 0;
     static int player = 0;
     static Map<Socket, Character> charMap = new HashMap<Socket, Character>();
-    static Map<Socket, String> msgMap = new HashMap<Socket, String>();
+    static Map<Socket, List<String>> msgMap = new HashMap<Socket, List<String>>();
     static List<Socket> socketList = new ArrayList<>();
     static List<Boss> bosses = new ArrayList<>();
     static String[] skills = {"1", "2"};
@@ -103,22 +103,23 @@ class Server {
                         String nick = line;
                         out.println("Choose a class : 1:Warrior  2:Mage  3:Archer");
                         String hero_class = in.readLine();
+                        
                         if(hero_class.equals("1")){
                             Character warrior = new Warrior(nick);
                             charMap.put(clientSocket, warrior);
                             socketList.add(clientSocket);
-                            msgMap.put(clientSocket, "");
+                            msgMap.put(clientSocket, new ArrayList<String>());
                             out.println("Press Enter");
                         }else if(hero_class.equals("2")) {
                             Character mage = new Mage(nick);
                             charMap.put(clientSocket, mage);
                             socketList.add(clientSocket);
-                            msgMap.put(clientSocket, "");
+                            msgMap.put(clientSocket, new ArrayList<String>());
                             out.println("Press Enter");
                         }else if(hero_class.equals("3")){
                             Character archer = new Archer(nick);
                             charMap.put(clientSocket, archer);
-                            msgMap.put(clientSocket, "");
+                            msgMap.put(clientSocket, new ArrayList<String>());
                             socketList.add(clientSocket);
                             out.println("Press Enter");
                         }
@@ -126,11 +127,12 @@ class Server {
                     else{
                         if (charMap.size() < 3){
                             msg = String.format("We wait for %d player.", 3-charMap.size());
-                            msgMap.replace(clientSocket, msg);
+                            msgMap.get(clientSocket).add(msg);
                         }
                         else if(charMap.size() == 3 && !gameSit){
                             msgMap.forEach((socketNumber, message) -> {
-                                msgMap.replace(socketNumber, "3 Players has arrived, lets begin!");
+                                msg = "3 Players has arrived, lets begin!";
+                                msgMap.get(socketNumber).add(msg);
                             });
                             bosses.add(new Boss("Queen of Pain"));
                             bosses.add(new Boss("Rosh"));
@@ -141,32 +143,41 @@ class Server {
                             if(clientSocket.equals(socketList.get(turn))){
                                 String[] acts = charMap.get(clientSocket).act_list();
                                 if (line.equals("1") || line.equals("2")) {
-                                    int[] response = charMap.get(clientSocket).attack(Integer.parseInt(line));
-                                    bosses.get(0).sethp(bosses.get(0).gethp() - response[1]);
-                                    msgMap.forEach((socketNumber, message) -> {
-                                        msg = String.format("Player %s attacted to boss with %s and rolled %d. So hit %d. Boss has %d hp",playerName,acts[response[2]],response[0],response[1],bosses.get(0).gethp());
-                                        msgMap.replace(socketNumber, msg);
-                                    });
+                                    int[] response = charMap.get(clientSocket).attack(Integer.parseInt(line)-1);
+                                    if (acts[response[2]].equals("Taunt") && response[1] == 10) {
+                                        bosses.get(0).taunt();
+                                        msgMap.forEach((socketNumber, message) -> {
+                                            msg = String.format("Player %s tried taunt to boss and rolled %d. So boss taunted. Boss' next attack has half attack. Boss still has %d hp",playerName,response[0],bosses.get(0).gethp());
+                                            msgMap.get(socketNumber).add(msg);
+                                        });
+                                    }
+                                    else{
+                                        bosses.get(0).sethp(bosses.get(0).gethp() - response[1]);
+                                        msgMap.forEach((socketNumber, message) -> {
+                                            msg = String.format("Player %s attacted to boss with %s and rolled %d. So hit %d. Boss has %d hp",playerName,acts[response[2]],response[0],response[1],bosses.get(0).gethp());
+                                            msgMap.get(socketNumber).add(msg);
+                                        });
+                                    }
                                     if(bosses.get(0).gethp() <= 0){
                                         if(bosses.size() == 2){
                                             msgMap.forEach((socketNumber, message) -> {
                                                 msg = String.format("Boss %s died. New Boss is %s", bosses.get(0).getName(), bosses.get(1).getName());
-                                                msgMap.replace(socketNumber, msg);
+                                                msgMap.get(socketNumber).add(msg);
                                             });
                                         }
                                         else{
                                             msgMap.forEach((socketNumber, message) -> {
                                                 msg = String.format("Boss %s died. Congratulations Champions You Win", bosses.get(0).getName(), bosses.get(1).getName());
-                                                msgMap.replace(socketNumber, msg);
+                                                msgMap.get(socketNumber).add(msg);
                                             });
                                         }
                                         bosses.remove(0);
                                     }
                                     turn++;
                                 }
-                                else{
+                                else if (msgMap.get(clientSocket).size() == 0) {
                                     msg = String.format("Now Your Turn. Choose a skill; 1:%s  2:%s", acts[0],acts[1]);
-                                    msgMap.replace(clientSocket, msg);
+                                    msgMap.get(clientSocket).add(msg);
                                 }
                                 if (turn >= socketList.size() && bosses.size() > 0) {
                                     Random rand = new Random();
@@ -179,13 +190,13 @@ class Server {
                                         socketList.remove(idx);
                                         msgMap.forEach((socketNumber, message) -> {
                                             msg = String.format("Boss attacted to %s with rolled %d. So hit %d. Unfourtunetly %s died.",target, response[0], response[1], target);
-                                            msgMap.replace(socketNumber, msg);
+                                            msgMap.get(socketNumber).add(msg);
                                         });
                                     }
                                     else{
                                         msgMap.forEach((socketNumber, message) -> {
                                             msg = String.format("Boss attacted to %s with rolled %d. So hit %d. Player %s has %d hp.",target, response[0], response[1], target, (tempHp-response[1]));
-                                            msgMap.replace(socketNumber, msg);
+                                            msgMap.get(socketNumber).add(msg);
                                         });
                                     }
                                     turn = 0;
@@ -193,16 +204,14 @@ class Server {
                             }
                             else{
                                 msg = String.format("it's %s turn to move",playerName);
-                                msgMap.replace(clientSocket, msg);
+                                msgMap.get(clientSocket).add(msg);
                             }
                         }
-                        if (!msgMap.get(clientSocket).equals("")) {
-                            out.println(msgMap.get(clientSocket));
-                            msgMap.replace(clientSocket, "");
+                        if (msgMap.get(clientSocket).size() > 0) {
+                            out.println(msgMap.get(clientSocket).remove(0));
                         }
                         else{
                             out.println("\n");
-                            msgMap.replace(clientSocket, "");
                         }
                     }
                 }
