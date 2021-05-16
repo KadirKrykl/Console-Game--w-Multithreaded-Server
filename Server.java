@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.text.html.HTMLDocument.BlockElement;
-
   
 // Server class
 class Server {
@@ -198,10 +196,14 @@ class Server {
                                 msgMap.replace(clientSocket, msg);
                             }
                         }
-                    }
-                    if (!msgMap.get(clientSocket).equals("")) {
-                        out.println(msgMap.get(clientSocket));
-                        msgMap.replace(clientSocket, "");
+                        if (!msgMap.get(clientSocket).equals("")) {
+                            out.println(msgMap.get(clientSocket));
+                            msgMap.replace(clientSocket, "");
+                        }
+                        else{
+                            out.println("\n");
+                            msgMap.replace(clientSocket, "");
+                        }
                     }
                 }
                 
